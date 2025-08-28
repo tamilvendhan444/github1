@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id            String   @id @default(uuid())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  name          String
+  rollNo        String   @unique
+  email         String?  @unique
+  passwordHash  String
+  idCardUrl     String
+  orders        Order[]
+}
+
+model MenuItem {
+  id            String     @id @default(uuid())
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  name          String
+  description   String?
+  priceCents    Int
+  imageUrl      String?
+  isAvailable   Boolean    @default(true)
+  orderLineItems OrderItem[]
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  student       Student     @relation(fields: [studentId], references: [id])
+  studentId     String
+  items         OrderItem[]
+  totalCents    Int
+  status        OrderStatus @default(PENDING)
+  paymentRef    String      @unique
+  qrCodeToken   String      @unique
+  qrScannedAt   DateTime?
+  qrScanCount   Int         @default(0)
+  qrScanLogs    QrScanLog[]
+}
+
+model OrderItem {
+  id              String   @id @default(uuid())
+  order           Order    @relation(fields: [orderId], references: [id])
+  orderId         String
+  menuItem        MenuItem @relation(fields: [menuItemId], references: [id])
+  menuItemId      String
+  quantity        Int
+  unitPriceCents  Int
+}
+
+model QrScanLog {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id])
+  orderId   String
+  token     String
+  isDuplicate Boolean @default(false)
+  scanner   String?
+}
+
+model AdminUser {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  email        String   @unique
+  passwordHash String
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  DELIVERED
+}
